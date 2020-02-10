@@ -1,7 +1,3 @@
-# go-bandwidth
-
-## usage
-```
 package main
 
 import (
@@ -29,4 +25,3 @@ func main() {
 		}
 	}
 }
-```
