@@ -1,6 +1,7 @@
 package bandwidth
 
 import (
+    "log"
 	"errors"
 	"io"
 	"time"
@@ -19,10 +20,12 @@ type ReadWriter struct {
 	duration time.Duration
 	fnRead   func(p []byte) (int, error)
 	fnWrite  func(p []byte) (int, error)
+    tcount   time.Duration
 }
 
 // NewReader returns ReadWriter structure included Read function
 func NewReader(r io.Reader, limit int64, duration time.Duration) *ReadWriter {
+    log.Println("#########", r)
 	return &ReadWriter{
 		limit:    limit,
 		duration: duration,
@@ -57,7 +60,7 @@ func (r *ReadWriter) Read(p []byte) (int, error) {
 	if r.fnRead == nil {
 		return 0, ErrCouldNotFoundFunction
 	}
-	return r.exec(p, r.fnRead)
+	return exec(p, r.limit, r.duration, &r.bytes, &r.t, &r.tcount, r.fnRead)
 }
 
 // Write is io.Writer.Write function
@@ -65,7 +68,7 @@ func (r *ReadWriter) Write(p []byte) (int, error) {
 	if r.fnWrite == nil {
 		return 0, ErrCouldNotFoundFunction
 	}
-	return r.exec(p, r.fnWrite)
+	return exec(p, r.limit, r.duration, &r.bytes, &r.t, &r.tcount, r.fnWrite)
 }
 
 const (
@@ -75,36 +78,38 @@ const (
 	taskEnd
 )
 
-func (r *ReadWriter) exec(p []byte, fn func([]byte) (int, error)) (n int, err error) {
+func exec(p []byte, limit int64, duration time.Duration, bytes *int64, t *time.Time, tcount *time.Duration, fn func([]byte) (int, error)) (n int, err error) {
 	task := taskCheck
 	var index int64
 	var retn int
 	for isLoop := true; isLoop; {
 		switch task {
 		case taskCheck:
+            s := time.Now()
 			if index >= int64(len(p)) {
 				task = taskEnd
 				break
 			}
 
-			if r.bytes >= r.limit {
+			if *bytes >= limit {
 				task = taskSleep
 			} else {
 				task = taskExec
 			}
+            *tcount += time.Now().Sub(s)
 		case taskExec:
-			size := r.limit - r.bytes
-			if size > int64(len(p[index:])) {
-				size = int64(len(p[index:]))
+            s := time.Now()
+			size := limit - *bytes
+            l := int64(len(p[index:]))
+			if size > l {
+				size = l
 			}
 
-			b := p[index : index+size]
-
-			n, err = fn(b)
+			n, err = fn(p[index:index+size])
 
 			index += int64(n)
 			retn += n
-			r.bytes += int64(n)
+			*bytes += int64(n)
 
 			if err != nil {
 				task = taskEnd
@@ -113,15 +118,18 @@ func (r *ReadWriter) exec(p []byte, fn func([]byte) (int, error)) (n int, err er
 
 			task = taskCheck
 
+            *tcount += time.Now().Sub(s)
 		case taskSleep:
-			diff := r.duration - time.Now().Sub(r.t)
+			diff := duration - time.Now().Sub(*t)
+            log.Println("SLEEP", diff, *tcount)
+            *tcount = 0
 			if diff > 0 {
 				time.Sleep(diff)
 			}
 
-			r.t = time.Now()
+			*t = time.Now()
 
-			r.bytes -= r.limit
+			*bytes -= limit
 
 			task = taskCheck
 		case taskEnd:

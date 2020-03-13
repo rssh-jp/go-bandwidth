@@ -1,6 +1,7 @@
 package bandwidth
 
 import (
+    "log"
 	"os"
 	"testing"
 	"time"
@@ -33,7 +34,21 @@ const (
 	duration = time.Second
 )
 
+func postProcess() {
+	err := os.Remove(filepath)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func TestMain(m *testing.M){
+    defer postProcess()
+
+    m.Run()
+}
+
 func TestWriterSuccess(t *testing.T) {
+    t.Parallel()
 	fd, err := os.OpenFile(filepath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0755)
 	if err != nil {
 		t.Fatal(err)
@@ -52,6 +67,7 @@ func TestWriterSuccess(t *testing.T) {
 }
 
 func TestReaderSuccess(t *testing.T) {
+    t.Parallel()
 	fd, err := os.Open(filepath)
 	if err != nil {
 		t.Fatal(err)
@@ -77,6 +93,7 @@ func TestReaderSuccess(t *testing.T) {
 }
 
 func TestReadWriterSuccess(t *testing.T) {
+    t.Parallel()
 	fd, err := os.OpenFile(filepath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0755)
 	if err != nil {
 		t.Fatal(err)
@@ -113,9 +130,3 @@ func TestReadWriterSuccess(t *testing.T) {
 	t.Log(n, buf)
 }
 
-func TestPostProcess(t *testing.T) {
-	err := os.Remove(filepath)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
