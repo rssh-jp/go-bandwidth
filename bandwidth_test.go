@@ -1,7 +1,7 @@
 package bandwidth
 
 import (
-    "log"
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -41,14 +41,16 @@ func postProcess() {
 	}
 }
 
-func TestMain(m *testing.M){
-    defer postProcess()
+func TestMain(m *testing.M) {
+	defer postProcess()
 
-    m.Run()
+	SetDefault(limit, duration)
+
+	m.Run()
 }
 
 func TestWriterSuccess(t *testing.T) {
-    t.Parallel()
+	t.Parallel()
 	fd, err := os.OpenFile(filepath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0755)
 	if err != nil {
 		t.Fatal(err)
@@ -56,7 +58,8 @@ func TestWriterSuccess(t *testing.T) {
 
 	defer fd.Close()
 
-	w := NewWriter(fd, limit, duration)
+	//w := NewWriter(fd, limit, duration)
+	w := NewWriterDefault(fd)
 
 	for i := 0; i < 100; i++ {
 		_, err := w.Write([]byte{2})
@@ -67,7 +70,7 @@ func TestWriterSuccess(t *testing.T) {
 }
 
 func TestReaderSuccess(t *testing.T) {
-    t.Parallel()
+	t.Parallel()
 	fd, err := os.Open(filepath)
 	if err != nil {
 		t.Fatal(err)
@@ -75,7 +78,8 @@ func TestReaderSuccess(t *testing.T) {
 
 	defer fd.Close()
 
-	r := NewReader(fd, limit, duration)
+	//r := NewReader(fd, limit, duration)
+	r := NewReaderDefault(fd)
 
 	size, err := getFileSize(fd)
 	if err != nil {
@@ -93,7 +97,7 @@ func TestReaderSuccess(t *testing.T) {
 }
 
 func TestReadWriterSuccess(t *testing.T) {
-    t.Parallel()
+	t.Parallel()
 	fd, err := os.OpenFile(filepath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0755)
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +105,8 @@ func TestReadWriterSuccess(t *testing.T) {
 
 	defer fd.Close()
 
-	rw := NewReadWriter(fd, fd, limit, duration)
+	//rw := NewReadWriter(fd, fd, limit, duration)
+	rw := NewReadWriterDefault(fd, fd)
 
 	for i := 0; i < 50; i++ {
 		_, err := rw.Write([]byte{5})
@@ -129,4 +134,3 @@ func TestReadWriterSuccess(t *testing.T) {
 
 	t.Log(n, buf)
 }
-
