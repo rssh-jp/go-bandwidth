@@ -20,7 +20,7 @@ func main() {
 
 	defer fd.Close()
 
-	w := bandwidth.NewWriter(fd, 100, time.Second)
+	w := New(OptionUseDefault(), OptionWriter(fd))
 
 	for i := 0; i < 100; i++ {
 		_, err := w.Write([]byte{2})

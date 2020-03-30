@@ -58,8 +58,7 @@ func TestWriterSuccess(t *testing.T) {
 
 	defer fd.Close()
 
-	//w := NewWriter(fd, limit, duration)
-	w := NewWriterDefault(fd)
+	w := New(OptionUseDefault(), OptionWriter(fd))
 
 	for i := 0; i < 100; i++ {
 		_, err := w.Write([]byte{2})
@@ -78,8 +77,7 @@ func TestReaderSuccess(t *testing.T) {
 
 	defer fd.Close()
 
-	//r := NewReader(fd, limit, duration)
-	r := NewReaderDefault(fd)
+	r := New(OptionUseDefault(), OptionReader(fd))
 
 	size, err := getFileSize(fd)
 	if err != nil {
@@ -105,8 +103,7 @@ func TestReadWriterSuccess(t *testing.T) {
 
 	defer fd.Close()
 
-	//rw := NewReadWriter(fd, fd, limit, duration)
-	rw := NewReadWriterDefault(fd, fd)
+	rw := New(OptionUseDefault(), OptionReader(fd), OptionWriter(fd))
 
 	for i := 0; i < 50; i++ {
 		_, err := rw.Write([]byte{5})

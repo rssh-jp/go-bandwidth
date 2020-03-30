@@ -3,7 +3,6 @@ package bandwidth
 import (
 	"errors"
 	"io"
-	"log"
 	"sync"
 	"time"
 )
@@ -55,73 +54,52 @@ type ReadWriter struct {
 	variable *variable
 }
 
-// NewReader returns ReadWriter structure included Read function
-func NewReader(r io.Reader, limit int64, duration time.Duration) *ReadWriter {
-	log.Println("#########", r)
-	return &ReadWriter{
-		fnRead: r.Read,
-		constant: constant{
-			limit:    limit,
-			duration: duration,
-		},
+// Option is functional option pattern
+type Option func(*ReadWriter)
+
+// OptionReader returns Option instance containing reader setting
+func OptionReader(r io.Reader) Option {
+	return func(rw *ReadWriter) {
+		rw.fnRead = r.Read
+	}
+}
+
+// OptionWriter returns Option instance containing writer setting
+func OptionWriter(w io.Writer) Option {
+	return func(rw *ReadWriter) {
+		rw.fnWrite = w.Write
+	}
+}
+
+// OptionConstant returns Option instance containing constant setting
+func OptionConstant(limit int64, duration time.Duration) Option {
+	return func(rw *ReadWriter) {
+		rw.constant.limit = limit
+		rw.constant.duration = duration
+	}
+}
+
+// OptionUseDefault returns Option instance containing use default setting
+func OptionUseDefault() Option {
+	return func(rw *ReadWriter) {
+		rw.constant = defaultConstant
+		rw.variable = &defaultVariable
+	}
+}
+
+// New returns ReadWriter instance
+func New(options ...Option) *ReadWriter {
+	rw := &ReadWriter{
 		variable: &variable{
 			t: time.Now(),
 		},
 	}
-}
 
-// NewWriter returns ReadWriter structure included Write function
-func NewWriter(w io.Writer, limit int64, duration time.Duration) *ReadWriter {
-	return &ReadWriter{
-		fnWrite: w.Write,
-		constant: constant{
-			limit:    limit,
-			duration: duration,
-		},
-		variable: &variable{
-			t: time.Now(),
-		},
+	for _, opt := range options {
+		opt(rw)
 	}
-}
 
-// NewReadWriter returns ReadWriter structure included Read/Write function
-func NewReadWriter(r io.Reader, w io.Writer, limit int64, duration time.Duration) *ReadWriter {
-	return &ReadWriter{
-		fnRead:  r.Read,
-		fnWrite: w.Write,
-		constant: constant{
-			limit:    limit,
-			duration: duration,
-		},
-		variable: &variable{
-			t: time.Now(),
-		},
-	}
-}
-
-func NewReaderDefault(r io.Reader) *ReadWriter {
-	return &ReadWriter{
-		fnRead:   r.Read,
-		constant: defaultConstant,
-		variable: &defaultVariable,
-	}
-}
-
-func NewWriterDefault(w io.Writer) *ReadWriter {
-	return &ReadWriter{
-		fnWrite:  w.Write,
-		constant: defaultConstant,
-		variable: &defaultVariable,
-	}
-}
-
-func NewReadWriterDefault(r io.Reader, w io.Writer) *ReadWriter {
-	return &ReadWriter{
-		fnRead:   r.Read,
-		fnWrite:  w.Write,
-		constant: defaultConstant,
-		variable: &defaultVariable,
-	}
+	return rw
 }
 
 // Read is io.Reader.Read function
@@ -198,7 +176,6 @@ func exec(p []byte, limit int64, duration time.Duration, bytes *int64, t *time.T
 			*tcount += time.Now().Sub(s)
 		case taskSleep:
 			diff := duration - time.Now().Sub(*t)
-			log.Println("SLEEP", diff, *tcount)
 			*tcount = 0
 			if diff > 0 {
 				time.Sleep(diff)
