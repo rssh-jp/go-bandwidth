@@ -41,6 +41,7 @@ func postProcess() {
 	}
 }
 
+// TestMain is Main
 func TestMain(m *testing.M) {
 	defer postProcess()
 
@@ -49,6 +50,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+// TestWriterSuccess is Writer test
 func TestWriterSuccess(t *testing.T) {
 	t.Parallel()
 	fd, err := os.OpenFile(filepath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0755)
@@ -68,6 +70,7 @@ func TestWriterSuccess(t *testing.T) {
 	}
 }
 
+// TestReaderSuccess is Reader test
 func TestReaderSuccess(t *testing.T) {
 	t.Parallel()
 	fd, err := os.Open(filepath)
@@ -94,6 +97,7 @@ func TestReaderSuccess(t *testing.T) {
 	t.Log(n, buf)
 }
 
+// TestReadWriterSuccess is ReadWriter test
 func TestReadWriterSuccess(t *testing.T) {
 	t.Parallel()
 	fd, err := os.OpenFile(filepath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0755)
