@@ -34,9 +34,8 @@ type constant struct {
 }
 
 type variable struct {
-	bytes  int64
-	t      time.Time
-	tcount time.Duration
+	bytes int64
+	t     time.Time
 	sync.Mutex
 }
 
@@ -90,6 +89,7 @@ func OptionUseDefault() Option {
 // New returns ReadWriter instance
 func New(options ...Option) *ReadWriter {
 	rw := &ReadWriter{
+		constant: defaultConstant,
 		variable: &variable{
 			t: time.Now(),
 		},
@@ -111,7 +111,7 @@ func (r *ReadWriter) Read(p []byte) (int, error) {
 	r.variable.Lock()
 	defer r.variable.Unlock()
 
-	return exec(p, r.constant.limit, r.constant.duration, &r.variable.bytes, &r.variable.t, &r.variable.tcount, r.fnRead)
+	return exec(p, r.constant.limit, r.constant.duration, &r.variable.bytes, &r.variable.t, r.fnRead)
 }
 
 // Write is io.Writer.Write function
@@ -123,7 +123,7 @@ func (r *ReadWriter) Write(p []byte) (int, error) {
 	r.variable.Lock()
 	defer r.variable.Unlock()
 
-	return exec(p, r.constant.limit, r.constant.duration, &r.variable.bytes, &r.variable.t, &r.variable.tcount, r.fnWrite)
+	return exec(p, r.constant.limit, r.constant.duration, &r.variable.bytes, &r.variable.t, r.fnWrite)
 }
 
 const (
@@ -133,14 +133,13 @@ const (
 	taskEnd
 )
 
-func exec(p []byte, limit int64, duration time.Duration, bytes *int64, t *time.Time, tcount *time.Duration, fn func([]byte) (int, error)) (n int, err error) {
+func exec(p []byte, limit int64, duration time.Duration, bytes *int64, t *time.Time, fn func([]byte) (int, error)) (n int, err error) {
 	task := taskCheck
 	var index int64
 	var retn int
 	for isLoop := true; isLoop; {
 		switch task {
 		case taskCheck:
-			s := time.Now()
 			if index >= int64(len(p)) {
 				task = taskEnd
 				break
@@ -151,9 +150,7 @@ func exec(p []byte, limit int64, duration time.Duration, bytes *int64, t *time.T
 			} else {
 				task = taskExec
 			}
-			*tcount += time.Now().Sub(s)
 		case taskExec:
-			s := time.Now()
 			size := limit - *bytes
 			l := int64(len(p[index:]))
 			if size > l {
@@ -172,11 +169,8 @@ func exec(p []byte, limit int64, duration time.Duration, bytes *int64, t *time.T
 			}
 
 			task = taskCheck
-
-			*tcount += time.Now().Sub(s)
 		case taskSleep:
 			diff := duration - time.Now().Sub(*t)
-			*tcount = 0
 			if diff > 0 {
 				time.Sleep(diff)
 			}

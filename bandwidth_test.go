@@ -26,7 +26,7 @@ func getFileSize(fd *os.File) (int64, error) {
 
 	_, err = fd.Seek(current, io.SeekStart)
 
-	return size, nil
+	return size, err
 }
 
 const (
