@@ -1,6 +1,7 @@
 package bandwidth
 
 import (
+	"io"
 	"log"
 	"os"
 	"testing"
@@ -8,22 +9,22 @@ import (
 )
 
 func getFileSize(fd *os.File) (int64, error) {
-	current, err := fd.Seek(0, os.SEEK_CUR)
+	current, err := fd.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return 0, err
 	}
 
-	_, err = fd.Seek(0, os.SEEK_SET)
+	_, err = fd.Seek(0, io.SeekStart)
 	if err != nil {
 		return 0, err
 	}
 
-	size, err := fd.Seek(0, os.SEEK_END)
+	size, err := fd.Seek(0, io.SeekEnd)
 	if err != nil {
 		return 0, err
 	}
 
-	_, err = fd.Seek(current, os.SEEK_SET)
+	_, err = fd.Seek(current, io.SeekStart)
 
 	return size, nil
 }
@@ -123,7 +124,7 @@ func TestReadWriterSuccess(t *testing.T) {
 
 	buf := make([]byte, size)
 
-	_, err = fd.Seek(0, os.SEEK_SET)
+	_, err = fd.Seek(0, io.SeekStart)
 	if err != nil {
 		t.Fatal(err)
 	}

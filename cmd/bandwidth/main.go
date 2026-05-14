@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/rssh-jp/go-bandwidth"
+	bandwidth "github.com/rssh-jp/go-bandwidth"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 
 	defer fd.Close()
 
-	w := bandwidth.NewWriter(fd, 100, time.Second)
+	w := bandwidth.New(bandwidth.OptionWriter(fd), bandwidth.OptionConstant(100, time.Second))
 
 	for i := 0; i < 100; i++ {
 		_, err := w.Write([]byte{2})
